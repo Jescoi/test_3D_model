@@ -9,11 +9,13 @@
   body{background:#f6f0e1; font-family:Microsoft YaHei;}
   .title{text-align:center;padding:2rem;color:#8a5a32;}
   #container{width:100%;height:700px;background:#f9f5eb;}
+  #log{color:green;padding:10px;text-align:center;}
 </style>
 </head>
 
 <body>
 <div class="title">古建筑三维数字展示</div>
+<div id="log">模型加载中...</div>
 <div id="container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
@@ -22,6 +24,7 @@
 
 <script>
 let container = document.getElementById('container');
+let log = document.getElementById('log');
 let scene, camera, renderer, controls;
 
 init();
@@ -31,31 +34,58 @@ function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf9f5eb);
 
-  camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(0, 3, 10);
+  // 相机初始位置（先放远一点，给模型留空间）
+  camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 10000);
+  camera.position.set(0, 5, 20);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(renderer.domElement);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+  // 灯光（照亮模型）
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
   scene.add(ambientLight);
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  dirLight.position.set(5, 10, 5);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+  dirLight.position.set(10, 20, 10);
   scene.add(dirLight);
 
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
+  // 加载模型
   const loader = new THREE.GLTFLoader();
-  
-  // 👇 这里我直接写你仓库真实文件名！！！
-  loader.load('./model.glb', (gltf) => {
-    scene.add(gltf.scene);
-    console.log("✅ 模型加载成功！");
-  }, undefined, (error) => {
-    console.error("❌ 模型加载失败：", error);
-  });
+  loader.load(
+    'model.glb',
+    (gltf) => {
+      const model = gltf.scene;
+      scene.add(model);
+      log.textContent = "✅ 模型加载成功！正在自动调整相机视角...";
+
+      // 👇 核心：自动计算模型边界，让相机对准模型
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+
+      // 计算相机需要的距离，让模型完整出现在视野中
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs(maxDim / Math.sin(fov / 2) / 2);
+
+      // 把相机拉到合适的位置，并对准模型中心
+      camera.position.set(center.x, center.y + size.y/2, center.z + cameraZ * 1.5);
+      controls.target.copy(center);
+      controls.update();
+
+      log.textContent = "✅ 相机已自动对准！拖动鼠标旋转查看";
+    },
+    (xhr) => {
+      log.textContent = `⏳ 加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+    },
+    (error) => {
+      log.textContent = `❌ 加载失败: ${error.message}`;
+      console.error(error);
+    }
+  );
 }
 
 function animate() {
