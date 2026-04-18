@@ -27,6 +27,9 @@ let container = document.getElementById('container');
 let log = document.getElementById('log');
 let scene, camera, renderer, controls;
 
+// 👇 把这里替换成你复制的直链地址
+const MODEL_URL = "https://github.com/Jescoi/test_3D_model/releases/download/v1.0.0/model.glb";
+
 init();
 animate();
 
@@ -34,7 +37,6 @@ function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf9f5eb);
 
-  // 相机初始位置（先放远一点，给模型留空间）
   camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 10000);
   camera.position.set(0, 5, 20);
 
@@ -42,7 +44,6 @@ function init() {
   renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(renderer.domElement);
 
-  // 灯光（照亮模型）
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
   scene.add(ambientLight);
   const dirLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -52,38 +53,38 @@ function init() {
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  // 加载模型
   const loader = new THREE.GLTFLoader();
   loader.load(
-    'model.glb',
+    MODEL_URL,
     (gltf) => {
       const model = gltf.scene;
       scene.add(model);
-      log.textContent = "✅ 模型加载成功！正在自动调整相机视角...";
+      log.textContent = "✅ 模型加载成功！正在调整视角...";
 
-      // 👇 核心：自动计算模型边界，让相机对准模型
       const box = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
 
-      // 计算相机需要的距离，让模型完整出现在视野中
       const maxDim = Math.max(size.x, size.y, size.z);
       const fov = camera.fov * (Math.PI / 180);
       let cameraZ = Math.abs(maxDim / Math.sin(fov / 2) / 2);
 
-      // 把相机拉到合适的位置，并对准模型中心
       camera.position.set(center.x, center.y + size.y/2, center.z + cameraZ * 1.5);
       controls.target.copy(center);
       controls.update();
 
-      log.textContent = "✅ 相机已自动对准！拖动鼠标旋转查看";
+      log.textContent = "✅ 加载完成！拖动鼠标旋转查看";
     },
     (xhr) => {
-      log.textContent = `⏳ 加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+      if (xhr.total > 0) {
+        log.textContent = `⏳ 加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+      } else {
+        log.textContent = `⏳ 正在加载，文件大小: ${(xhr.total / 1024 / 1024).toFixed(2)}MB`;
+      }
     },
     (error) => {
       log.textContent = `❌ 加载失败: ${error.message}`;
-      console.error(error);
+      console.error("完整错误日志:", error);
     }
   );
 }
