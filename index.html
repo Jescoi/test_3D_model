@@ -13,53 +13,49 @@
 <body>
 <div id="log">模型加载中...</div>
 
-<!-- 用传统的script标签引入Three.js，不使用ES6模块，浏览器100%兼容 -->
+<!-- 1. 先引入Three.js主库 -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<!-- 2. 再引入OrbitControls，挂载到window对象 -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+<!-- 3. 再引入模型加载器 -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <script>
-const container = document.body;
 const log = document.getElementById('log');
 
-// 1. 基础场景初始化
+// 基础场景
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf6f0e1);
 
-const camera = new THREE.PerspectiveCamera(
-  50,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 3, 10);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-container.appendChild(renderer.domElement);
+document.body.appendChild(renderer.domElement);
 
-// 2. 鼠标控制（第三人称旋转缩放）
+// 正确初始化OrbitControls
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// 3. 灯光（确保模型可见）
+// 灯光
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
 scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 1);
 dirLight.position.set(5, 10, 5);
 scene.add(dirLight);
 
-// 4. 加载模型（路径最简单，和index.html同目录）
+// 加载模型
 const loader = new THREE.GLTFLoader();
 loader.load(
-  './model2.glb',
+  './model.glb',
   function (gltf) {
     const model = gltf.scene;
     scene.add(model);
     log.textContent = "✅ 模型加载成功！拖动鼠标旋转查看";
     log.style.color = "green";
 
-    // 自动调整相机视角，确保模型在画面中
+    // 自动调整相机视角
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
@@ -80,11 +76,11 @@ loader.load(
   function (error) {
     log.textContent = `❌ 加载失败: ${error.message}`;
     log.style.color = "red";
-    console.error("完整错误日志:", error);
+    console.error(error);
   }
 );
 
-// 5. 渲染循环
+// 渲染循环
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
@@ -92,8 +88,8 @@ function animate() {
 }
 animate();
 
-// 窗口大小自适应
-window.addEventListener('resize', function () {
+// 窗口自适应
+window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
