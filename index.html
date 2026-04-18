@@ -1,42 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>古建筑3D展示</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #f6f0e1; font-family: "Microsoft YaHei", sans-serif; }
+  #log { color: #8a5a32; padding: 20px; text-align: center; font-size: 18px; }
+</style>
 </head>
-<body style="margin:0;">
+<body>
+<div id="log">模型加载中...</div>
 
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+<!-- 用传统的script标签引入Three.js，不使用ES6模块，浏览器100%兼容 -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
 
+<script>
+const container = document.body;
+const log = document.getElementById('log');
+
+// 1. 基础场景初始化
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({antialias:true});
+scene.background = new THREE.Color(0xf6f0e1);
 
-renderer.setSize(innerWidth, innerHeight);
-document.body.appendChild(renderer.domElement);
+const camera = new THREE.PerspectiveCamera(
+  50,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+camera.position.set(0, 3, 10);
 
-camera.position.z = 5;
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+container.appendChild(renderer.domElement);
 
-new OrbitControls(camera, renderer.domElement);
+// 2. 鼠标控制（第三人称旋转缩放）
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-const light = new THREE.AmbientLight(0xffffff, 2);
-scene.add(light);
+// 3. 灯光（确保模型可见）
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+scene.add(ambientLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(5, 10, 5);
+scene.add(dirLight);
 
-// 加载模型
-const loader = new GLTFLoader();
-loader.load('./model2.glb', (gltf) => {
-  scene.add(gltf.scene);
-  console.log("✅ 模型加载成功！");
-});
+// 4. 加载模型（路径最简单，和index.html同目录）
+const loader = new THREE.GLTFLoader();
+loader.load(
+  './model2.glb',
+  function (gltf) {
+    const model = gltf.scene;
+    scene.add(model);
+    log.textContent = "✅ 模型加载成功！拖动鼠标旋转查看";
+    log.style.color = "green";
 
+    // 自动调整相机视角，确保模型在画面中
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * (Math.PI / 180);
+    const cameraZ = Math.abs(maxDim / Math.sin(fov / 2) / 2);
+
+    camera.position.set(center.x, center.y + size.y / 2, center.z + cameraZ * 1.5);
+    controls.target.copy(center);
+    controls.update();
+  },
+  function (xhr) {
+    if (xhr.total > 0) {
+      log.textContent = `⏳ 加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
+    }
+  },
+  function (error) {
+    log.textContent = `❌ 加载失败: ${error.message}`;
+    log.style.color = "red";
+    console.error("完整错误日志:", error);
+  }
+);
+
+// 5. 渲染循环
 function animate() {
   requestAnimationFrame(animate);
+  controls.update();
   renderer.render(scene, camera);
 }
 animate();
-</script>
 
+// 窗口大小自适应
+window.addEventListener('resize', function () {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
 </body>
 </html>
