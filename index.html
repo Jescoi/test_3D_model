@@ -26,10 +26,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const log = document.getElementById('log');
 
-// 基础场景
+// 1. 基础场景初始化
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf6f0e1);
 
@@ -40,19 +41,23 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// 鼠标控制（正确初始化）
+// 2. 鼠标控制
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-// 灯光
+// 3. 灯光
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
 scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 1);
 dirLight.position.set(5, 10, 5);
 scene.add(dirLight);
 
-// 加载模型
+// 4. 模型加载（带Draco解码器）
 const loader = new GLTFLoader();
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+loader.setDRACOLoader(dracoLoader);
+
 loader.load(
   './model.glb',
   function (gltf) {
@@ -86,7 +91,7 @@ loader.load(
   }
 );
 
-// 渲染循环
+// 5. 渲染循环
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
