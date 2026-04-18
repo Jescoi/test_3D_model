@@ -1,99 +1,42 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>古建筑3D展示</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:#f6f0e1; font-family:Microsoft YaHei;}
-  .title{text-align:center;padding:2rem;color:#8a5a32;}
-  #container{width:100%;height:700px;background:#f9f5eb;}
-  #log{color:green;padding:10px;text-align:center;}
-</style>
+<meta charset="utf-8">
 </head>
+<body style="margin:0;">
 
-<body>
-<div class="title">古建筑三维数字展示</div>
-<div id="log">模型加载中...</div>
-<div id="container"></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({antialias:true});
 
-<script>
-let container = document.getElementById('container');
-let log = document.getElementById('log');
-let scene, camera, renderer, controls;
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
 
-// 👇 把这里替换成你复制的直链地址
-const MODEL_URL = "https://github.com/Jescoi/test_3D_model/releases/download/v1.0.0/model.glb";
+camera.position.z = 5;
 
-init();
-animate();
+new OrbitControls(camera, renderer.domElement);
 
-function init() {
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf9f5eb);
+const light = new THREE.AmbientLight(0xffffff, 2);
+scene.add(light);
 
-  camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 10000);
-  camera.position.set(0, 5, 20);
-
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(renderer.domElement);
-
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
-  scene.add(ambientLight);
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-  dirLight.position.set(10, 20, 10);
-  scene.add(dirLight);
-
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-
-  const loader = new THREE.GLTFLoader();
-  loader.load(
-    MODEL_URL,
-    (gltf) => {
-      const model = gltf.scene;
-      scene.add(model);
-      log.textContent = "✅ 模型加载成功！正在调整视角...";
-
-      const box = new THREE.Box3().setFromObject(model);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const fov = camera.fov * (Math.PI / 180);
-      let cameraZ = Math.abs(maxDim / Math.sin(fov / 2) / 2);
-
-      camera.position.set(center.x, center.y + size.y/2, center.z + cameraZ * 1.5);
-      controls.target.copy(center);
-      controls.update();
-
-      log.textContent = "✅ 加载完成！拖动鼠标旋转查看";
-    },
-    (xhr) => {
-      if (xhr.total > 0) {
-        log.textContent = `⏳ 加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
-      } else {
-        log.textContent = `⏳ 正在加载，文件大小: ${(xhr.total / 1024 / 1024).toFixed(2)}MB`;
-      }
-    },
-    (error) => {
-      log.textContent = `❌ 加载失败: ${error.message}`;
-      console.error("完整错误日志:", error);
-    }
-  );
-}
+// 加载模型
+const loader = new GLTFLoader();
+loader.load('./model2.glb', (gltf) => {
+  scene.add(gltf.scene);
+  console.log("✅ 模型加载成功！");
+});
 
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
   renderer.render(scene, camera);
 }
+animate();
 </script>
+
 </body>
 </html>
