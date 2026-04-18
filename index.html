@@ -13,14 +13,20 @@
 <body>
 <div id="log">模型加载中...</div>
 
-<!-- 1. 先引入Three.js主库 -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<!-- 2. 再引入OrbitControls，挂载到window对象 -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-<!-- 3. 再引入模型加载器 -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
 const log = document.getElementById('log');
 
 // 基础场景
@@ -34,8 +40,8 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// 正确初始化OrbitControls
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
+// 鼠标控制（正确初始化）
+const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // 灯光
@@ -46,7 +52,7 @@ dirLight.position.set(5, 10, 5);
 scene.add(dirLight);
 
 // 加载模型
-const loader = new THREE.GLTFLoader();
+const loader = new GLTFLoader();
 loader.load(
   './model.glb',
   function (gltf) {
