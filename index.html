@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>古建筑3D展示</title>
+<title>古建筑3D展示 - 第一人称视角</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: #f6f0e1; font-family: "Microsoft YaHei", sans-serif; }
@@ -30,68 +30,70 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const log = document.getElementById('log');
 
-// 1. 基础场景初始化
+// 场景
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf6f0e1);
 
+// 相机
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 3, 10);
+camera.position.set(0, 3, 10); // 你之后可以换成你测量的坐标
 
+// 渲染器
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// 2. 鼠标控制
+// ========== 核心：第一人称原地环视 ==========
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
 
-// 3. 灯光
+// 禁止平移、禁止缩放
+controls.enablePan = false;
+controls.enableZoom = false;
+
+// 只允许旋转视角（第一人称效果）
+controls.enableRotate = true;
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+
+// 相机自身不动，只转头
+controls.maxPolarAngle = Math.PI / 2;
+controls.minPolarAngle = Math.PI / 4;
+// ==========================================
+
+// 灯光
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
 scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 1);
 dirLight.position.set(5, 10, 5);
 scene.add(dirLight);
 
-// 4. 模型加载（带Draco解码器）
+// 模型加载
 const loader = new GLTFLoader();
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 loader.setDRACOLoader(dracoLoader);
 
 loader.load(
-  './model.glb',
+  './chaodonglou_f1.glb',
   function (gltf) {
     const model = gltf.scene;
     scene.add(model);
-    log.textContent = "✅ 模型加载成功！拖动鼠标旋转查看";
+    log.textContent = "✅ 第一人称模式：鼠标拖动转头环视";
     log.style.color = "green";
 
-    // 自动调整相机视角
+    // 自动对准模型
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180);
-    const cameraZ = Math.abs(maxDim / Math.sin(fov / 2) / 2);
-
-    camera.position.set(center.x, center.y + size.y / 2, center.z + cameraZ * 1.5);
     controls.target.copy(center);
     controls.update();
   },
-  function (xhr) {
-    if (xhr.total > 0) {
-      log.textContent = `⏳ 加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(0)}%`;
-    }
-  },
+  function (xhr) {},
   function (error) {
-    log.textContent = `❌ 加载失败: ${error.message}`;
+    log.textContent = "❌ 加载失败：" + error.message;
     log.style.color = "red";
-    console.error(error);
   }
 );
 
-// 5. 渲染循环
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
@@ -99,7 +101,6 @@ function animate() {
 }
 animate();
 
-// 窗口自适应
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
