@@ -65,8 +65,8 @@ container.appendChild(renderer.domElement);
 
 // 第一人称鼠标控制变量
 let mouseX = 0, mouseY = 0;
-// 初始视角顺时针转90度
-let azimuth = -Math.PI/2, polar = Math.PI / 2;
+// 初始视角：顺时针90度 + 上抬20度
+let azimuth = -Math.PI/2, polar = Math.PI/2 + 0.35;
 const sensitivity = 0.003;
 
 // 鼠标移动控制视角
