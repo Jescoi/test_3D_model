@@ -52,12 +52,12 @@ const log = document.getElementById('log');
 const container = document.getElementById('viewer');
 
 const scene = new THREE.Scene();
-// 3D展示框背景改为白色
-scene.background = new THREE.Color(0xd7dee8);
+// 3D展示框背景
+scene.background = new THREE.Color(0xd5d5d5);
 
 // 相机位置（可自己微调）
 const camera = new THREE.PerspectiveCamera(50, 1200 / 700, 0.1, 1000);
-camera.position.set(15, 2, 0);
+camera.position.set(17, 2, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(1200, 700);
