@@ -43,7 +43,7 @@
 {
   "imports": {
     "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three/0.160.0/examples/jsm/"
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -56,7 +56,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 const bgColor = 0xd5d5d5;
 const sensitivity = 0.003;
 
-// 🔥 全局共用解码器：加载速度提升核心！
+// 全局共用 Draco 解码器（加载提速关键）
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
@@ -77,6 +77,7 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
   let azimuth = -Math.PI/2;
   let polar = Math.PI/2 - 0.35;
 
+  // 电脑控制
   renderer.domElement.addEventListener('mousemove', (e) => {
     if (!e.buttons) return;
     azimuth -= e.movementX * sensitivity;
@@ -84,6 +85,7 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
     polar = Math.max(Math.PI / 6, Math.min(Math.PI * 5 / 6, polar));
   });
 
+  // 手机触摸控制
   let lastX = 0, lastY = 0;
   renderer.domElement.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
@@ -104,13 +106,14 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
     }
   });
 
+  // 灯光
   const ambient = new THREE.AmbientLight(0xffffff, 1.5);
   scene.add(ambient);
   const direct = new THREE.DirectionalLight(0xffffff, 1);
   direct.position.set(5, 10, 5);
   scene.add(direct);
 
-  // 🔥 使用共用解码器，不重复加载
+  // 模型加载（共用解码器）
   const loader = new GLTFLoader();
   loader.setDRACOLoader(dracoLoader);
 
@@ -146,9 +149,7 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
   animate();
 }
 
-// ==============================================
-// 🔴 相机位置 & 文件名 完全和你一样！
-// ==============================================
+// 模型文件名 & 相机位置（和你现在的设置完全一致）
 createViewer('viewer1', 'log1', './chaodonglou_f5.glb', new THREE.Vector3(3, 2, 4));
 createViewer('viewer2', 'log2', './kenqianglou_f5.glb', new THREE.Vector3(30, 3, 0));
 
