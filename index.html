@@ -33,11 +33,9 @@
 </head>
 <body>
 
-<!-- 第一个展示框 -->
 <div class="log" id="log1">模型1加载中...</div>
 <div class="viewer" id="viewer1"></div>
 
-<!-- 第二个展示框（下滑可见） -->
 <div class="log" id="log2">模型2加载中...</div>
 <div class="viewer" id="viewer2"></div>
 
@@ -45,7 +43,7 @@
 {
   "imports": {
     "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three/addons/"
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -55,8 +53,6 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-// ==============================================
-// 公共配置
 const bgColor = 0xd5d5d5;
 const sensitivity = 0.003;
 
@@ -74,11 +70,9 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
   renderer.setSize(1200, 700);
   container.appendChild(renderer.domElement);
 
-  // 视角初始值：顺时针90度 + 上抬20度
   let azimuth = -Math.PI/2;
   let polar = Math.PI/2 - 0.35;
 
-  // 鼠标控制（你原来的代码，完全没动）
   renderer.domElement.addEventListener('mousemove', (e) => {
     if (!e.buttons) return;
     azimuth -= e.movementX * sensitivity;
@@ -86,9 +80,6 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
     polar = Math.max(Math.PI / 6, Math.min(Math.PI * 5 / 6, polar));
   });
 
-  // ==============================================
-  // 只加这一段：手机触摸支持（不影响任何原有功能）
-  // ==============================================
   let lastX = 0, lastY = 0;
   renderer.domElement.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
@@ -109,14 +100,12 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
     }
   });
 
-  // 灯光（原样）
   const ambient = new THREE.AmbientLight(0xffffff, 1.5);
   scene.add(ambient);
   const direct = new THREE.DirectionalLight(0xffffff, 1);
   direct.position.set(5, 10, 5);
   scene.add(direct);
 
-  // 模型加载（你原来的代码，100% 没动）
   const loader = new GLTFLoader();
   const draco = new DRACOLoader();
   draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
@@ -133,10 +122,10 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
     (err) => {
       log.textContent = "❌ 加载失败：" + err.message;
       log.style.color = "red";
+      console.error(err);
     }
   );
 
-  // 动画（原样）
   function animate() {
     requestAnimationFrame(animate);
     const dir = new THREE.Vector3(
@@ -155,7 +144,9 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
 }
 
 // ==============================================
-// 创建两个展示框（你原来的位置，完全没动）
+// 🔴 这里就是相机位置！直接改这里的数字即可
+// 格式：new THREE.Vector3(X, Y, Z)
+// X: 左右 | Y: 高度 | Z: 前后
 // ==============================================
 createViewer('viewer1', 'log1', './model.glb', new THREE.Vector3(17, 2, 0));
 createViewer('viewer2', 'log2', './kenqianglou_f2.glb', new THREE.Vector3(17, 2, 0));
