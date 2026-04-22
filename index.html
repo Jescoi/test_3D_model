@@ -43,7 +43,7 @@
 {
   "imports": {
     "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    "three/addons/": "https://unpkg.com/three/0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -55,6 +55,10 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const bgColor = 0xd5d5d5;
 const sensitivity = 0.003;
+
+// 🔥 全局共用解码器：加载速度提升核心！
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
 function createViewer(containerId, logId, modelUrl, cameraPos) {
   const container = document.getElementById(containerId);
@@ -106,10 +110,9 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
   direct.position.set(5, 10, 5);
   scene.add(direct);
 
+  // 🔥 使用共用解码器，不重复加载
   const loader = new GLTFLoader();
-  const draco = new DRACOLoader();
-  draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-  loader.setDRACOLoader(draco);
+  loader.setDRACOLoader(dracoLoader);
 
   loader.load(
     modelUrl,
@@ -144,11 +147,9 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
 }
 
 // ==============================================
-// 🔴 这里就是相机位置！直接改这里的数字即可
-// 格式：new THREE.Vector3(X, Y, Z)
-// X: 左右 | Y: 高度 | Z: 前后
+// 🔴 相机位置 & 文件名 完全和你一样！
 // ==============================================
-createViewer('viewer1', 'log1', './chaodonglou_f5.glb', new THREE.Vector3(3, 2.5, 4));
+createViewer('viewer1', 'log1', './chaodonglou_f5.glb', new THREE.Vector3(3, 2, 4));
 createViewer('viewer2', 'log2', './kenqianglou_f5.glb', new THREE.Vector3(30, 3, 0));
 
 </script>
