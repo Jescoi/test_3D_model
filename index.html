@@ -34,19 +34,15 @@
 
 <body>
 
-<!-- 1 -->
 <div class="log" id="log1">模型1加载中...</div>
 <div class="viewer" id="viewer1"></div>
 
-<!-- 2 -->
 <div class="log" id="log2">模型2加载中...</div>
 <div class="viewer" id="viewer2"></div>
 
-<!-- 3 新增：清净寺 -->
 <div class="log" id="log3">模型3加载中...</div>
 <div class="viewer" id="viewer3"></div>
 
-<!-- 4 新增：天后宫 -->
 <div class="log" id="log4">模型4加载中...</div>
 <div class="viewer" id="viewer4"></div>
 
@@ -70,7 +66,7 @@ const sensitivity = 0.003;
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
-function createViewer(containerId, logId, modelUrl, cameraPos, initAzimuth = 0) {
+function createViewer(containerId, logId, modelUrl, cameraPos, initAzimuth = 0, pitchAngle = 0.35) {
   const container = document.getElementById(containerId);
   const log = document.getElementById(logId);
 
@@ -84,9 +80,9 @@ function createViewer(containerId, logId, modelUrl, cameraPos, initAzimuth = 0) 
   renderer.setSize(1200, 700);
   container.appendChild(renderer.domElement);
 
-  // 初始视角：支持逆时针90度
   let azimuth = -Math.PI/2 + initAzimuth;
-  let polar = Math.PI/2 - 0.35;
+  // 俯仰角度：0.35≈20°，0.17≈10°
+  let polar = Math.PI/2 - pitchAngle;
 
   renderer.domElement.addEventListener('mousemove', (e) => {
     if (!e.buttons) return;
@@ -156,18 +152,17 @@ function createViewer(containerId, logId, modelUrl, cameraPos, initAzimuth = 0) 
   animate();
 }
 
-// ====================== 你的模型配置 ======================
-// 1 朝东楼
-createViewer('viewer1', 'log1', './chaodonglou_f5.glb', new THREE.Vector3(3, 2, 4));
+// 朝东楼：俯仰 10°
+createViewer('viewer1', 'log1', './chaodonglou_f5.glb', new THREE.Vector3(3, 2, 4), 0, 0.17);
 
-// 2 坑墙楼
+// 坑墙楼：保持原角度
 createViewer('viewer2', 'log2', './kenqianglou_f5.glb', new THREE.Vector3(30, 3, 0));
 
-// 3 清净寺 ← 你要求：逆时针转90度
-createViewer('viewer3', 'log3', './qingjinsi_f1.glb', new THREE.Vector3(3, 2, 4), Math.PI/2);
+// 清净寺：旋转已修正
+createViewer('viewer3', 'log3', './qingjinsi_f1.glb', new THREE.Vector3(23, 3, 4), Math.PI/2);
 
-// 4 天后宫 ← 你要求：视角不变
-createViewer('viewer4', 'log4', './tianhougong_f1.glb', new THREE.Vector3(20, 3, 3));
+// 天后宫：俯仰 10°
+createViewer('viewer4', 'log4', './tianhougong_f1.glb', new THREE.Vector3(25, 3, -1), 0, 0.17);
 
 </script>
 </body>
