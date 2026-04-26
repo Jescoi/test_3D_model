@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- 🔥 禁用浏览器缓存（从此永不乱缓存！） -->
+<!-- 禁用浏览器缓存 -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 
-<title>五模型展示（永不卡顿版）</title>
+<title>五模型展示（线上稳定版）</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#f6f0e1;display:flex;flex-direction:column;align-items:center;padding:30px 0;gap:30px}
@@ -24,11 +24,12 @@
 <div class="log" id="log4">加载中...</div><div class="viewer" id="viewer4"></div>
 <div class="log" id="log5">加载中...</div><div class="viewer" id="viewer5"></div>
 
+<!-- 换回 GitHub Pages 不跨域的 unpkg 地址 -->
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.staticfile.net/three.js/0.160.0/three.module.js",
-    "three/addons/": "https://cdn.staticfile.net/three.js/0.160.0/examples/jsm/"
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -38,74 +39,78 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 
-// 🔥 禁用缓存，永远读最新文件
+// 禁用 Three.js 缓存，每次都读最新文件
 THREE.Cache.enabled = false
 
+// 换回 Google 的 DRACO 解码器，GitHub Pages 不跨域
 const draco = new DRACOLoader()
-draco.setDecoderPath('https://cdn.staticfile.net/draco/1.5.6/')
+draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
 
 const loader = new GLTFLoader()
 loader.setDRACOLoader(draco)
 
 async function createViewer(containerId, logId, url, cam, az=0, pitch=0.35){
-const dom = document.getElementById(containerId)
-const log = document.getElementById(logId)
-log.textContent = '⏳ 加载中...'
+  const dom = document.getElementById(containerId)
+  const log = document.getElementById(logId)
+  log.textContent = '⏳ 加载中...'
 
-const scene = new THREE.Scene()
-scene.background = new THREE.Color(0xd5d5d5)
+  const scene = new THREE.Scene()
+  scene.background = new THREE.Color(0xd5d5d5)
 
-const camera = new THREE.PerspectiveCamera(50, 1200/700, 0.1, 2000)
-camera.position.copy(cam)
+  const camera = new THREE.PerspectiveCamera(50, 1200/700, 0.1, 2000)
+  camera.position.copy(cam)
 
-const renderer = new THREE.WebGLRenderer({antialias:true})
-renderer.setSize(1200,700)
-dom.appendChild(renderer.domElement)
+  const renderer = new THREE.WebGLRenderer({antialias:true})
+  renderer.setSize(1200,700)
+  dom.appendChild(renderer.domElement)
 
-let azimuth = -Math.PI/2 + az
-let polar = Math.PI/2 - pitch
+  let azimuth = -Math.PI/2 + az
+  let polar = Math.PI/2 - pitch
 
-renderer.domElement.addEventListener('mousemove', e=>{
-if(!e.buttons)return
-azimuth -= e.movementX*0.003
-polar -= e.movementY*0.003
-polar=Math.max(Math.PI/6,Math.min(Math.PI*5/6,polar))
-})
+  renderer.domElement.addEventListener('mousemove', e=>{
+    if(!e.buttons)return
+    azimuth -= e.movementX*0.003
+    polar -= e.movementY*0.003
+    polar=Math.max(Math.PI/6,Math.min(Math.PI*5/6,polar))
+  })
 
-const light = new THREE.AmbientLight(0xffffff,2)
-scene.add(light)
+  const light = new THREE.AmbientLight(0xffffff,2)
+  scene.add(light)
 
-await new Promise(resolve=>{
-// 🔥 每次加载都加时间戳，强制读新文件
-loader.load(url + '?t='+Date.now(),gltf=>{
-scene.add(gltf.scene)
-log.textContent='✅ 就绪'
-log.style.color='green'
-resolve()
-},undefined,()=>{
-log.textContent='❌ 加载失败'
-log.style.color='red'
-resolve()
-})
-})
+  await new Promise(resolve=>{
+    // 加时间戳，强制浏览器不缓存模型文件
+    loader.load(url + '?t='+Date.now(),gltf=>{
+      scene.add(gltf.scene)
+      log.textContent='✅ 就绪'
+      log.style.color='green'
+      resolve()
+    },undefined,()=>{
+      log.textContent='❌ 加载失败'
+      log.style.color='red'
+      resolve()
+    })
+  })
 
-function ani(){requestAnimationFrame(ani)
-const dir=new THREE.Vector3(
-Math.sin(azimuth)*Math.sin(polar),
-Math.cos(polar),
-Math.cos(azimuth)*Math.sin(polar))
-camera.lookAt(camera.position.x+dir.x,camera.position.y+dir.y,camera.position.z+dir.z)
-renderer.render(scene,camera)
+  function ani(){
+    requestAnimationFrame(ani)
+    const dir=new THREE.Vector3(
+      Math.sin(azimuth)*Math.sin(polar),
+      Math.cos(polar),
+      Math.cos(azimuth)*Math.sin(polar)
+    )
+    camera.lookAt(camera.position.x+dir.x,camera.position.y+dir.y,camera.position.z+dir.z)
+    renderer.render(scene,camera)
+  }
+  ani()
 }
-ani()
-}
 
+// 串行加载，避免并发请求被限制
 (async function(){
-await createViewer('viewer1','log1','./chaodonglou_f5.glb',new THREE.Vector3(3,2,4),0,0.17)
-await createViewer('viewer2','log2','./kenqianglou_f5.glb',new THREE.Vector3(30,3,0))
-await createViewer('viewer3','log3','./qingjinsi_f1.glb',new THREE.Vector3(3,3,-20),Math.PI/2)
-await createViewer('viewer4','log4','./tianhougong_f1.glb',new THREE.Vector3(25,3,-1),0,0.17)
-await createViewer('viewer5','log5','./wanshouta_f1.glb',new THREE.Vector3(25,2,4))
+  await createViewer('viewer1','log1','./chaodonglou_f5.glb',new THREE.Vector3(3,2,4),0,0.17)
+  await createViewer('viewer2','log2','./kenqianglou_f5.glb',new THREE.Vector3(30,3,0))
+  await createViewer('viewer3','log3','./qingjinsi_f1.glb',new THREE.Vector3(3,3,-20),Math.PI/2)
+  await createViewer('viewer4','log4','./tianhougong_f1.glb',new THREE.Vector3(25,3,-1),0,0.17)
+  await createViewer('viewer5','log5','./wanshouta_f1.glb',new THREE.Vector3(25,2,4))
 })()
 </script>
 </body>
