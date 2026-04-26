@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>四3D展示框</title>
+<title>五3D展示框</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { 
@@ -46,11 +46,15 @@
 <div class="log" id="log4">模型4加载中...</div>
 <div class="viewer" id="viewer4"></div>
 
+<!-- 👇 第五个展柜 -->
+<div class="log" id="log5">模型5加载中...</div>
+<div class="viewer" id="viewer5"></div>
+
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    "three": "https://cdn.bootcdn.net/ajax/libs/three.js/0.160.0/three.module.min.js",
+    "three/addons/": "https://cdn.bootcdn.net/ajax/libs/three.js/0.160.0/examples/jsm/"
   }
 }
 </script>
@@ -60,11 +64,12 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
+// 国内高速 Draco 解码（解决国外链接卡顿）
 const bgColor = 0xd5d5d5;
 const sensitivity = 0.003;
 
 const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+dracoLoader.setDecoderPath('https://cdn.bootcdn.net/ajax/libs/draco/1.5.6/');
 
 function createViewer(containerId, logId, modelUrl, cameraPos, initAzimuth = 0, pitchAngle = 0.35) {
   const container = document.getElementById(containerId);
@@ -81,7 +86,6 @@ function createViewer(containerId, logId, modelUrl, cameraPos, initAzimuth = 0, 
   container.appendChild(renderer.domElement);
 
   let azimuth = -Math.PI/2 + initAzimuth;
-  // 俯仰角度：0.35≈20°，0.17≈10°
   let polar = Math.PI/2 - pitchAngle;
 
   renderer.domElement.addEventListener('mousemove', (e) => {
@@ -152,17 +156,20 @@ function createViewer(containerId, logId, modelUrl, cameraPos, initAzimuth = 0, 
   animate();
 }
 
-// 朝东楼：俯仰 10°
+// 朝东楼
 createViewer('viewer1', 'log1', './chaodonglou_f5.glb', new THREE.Vector3(3, 2, 4), 0, 0.17);
 
-// 坑墙楼：保持原角度
+// 坑墙楼
 createViewer('viewer2', 'log2', './kenqianglou_f5.glb', new THREE.Vector3(30, 3, 0));
 
-// 清净寺：旋转已修正
+// 清净寺
 createViewer('viewer3', 'log3', './qingjinsi_f1.glb', new THREE.Vector3(3, 3, -20), Math.PI/2);
 
-// 天后宫：俯仰 10°
+// 天后宫
 createViewer('viewer4', 'log4', './tianhougong_f1.glb', new THREE.Vector3(25, 3, -1), 0, 0.17);
+
+// 👇 第五个模型（相机 = 朝东楼一模一样）
+createViewer('viewer5', 'log5', './wanshouta_f1.glb', new THREE.Vector3(3, 2, 4));
 
 </script>
 </body>
