@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>双3D展示框</title>
+<title>四3D展示框</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { 
@@ -31,13 +31,24 @@
   }
 </style>
 </head>
+
 <body>
 
+<!-- 1 -->
 <div class="log" id="log1">模型1加载中...</div>
 <div class="viewer" id="viewer1"></div>
 
+<!-- 2 -->
 <div class="log" id="log2">模型2加载中...</div>
 <div class="viewer" id="viewer2"></div>
+
+<!-- 3 新增：清净寺 -->
+<div class="log" id="log3">模型3加载中...</div>
+<div class="viewer" id="viewer3"></div>
+
+<!-- 4 新增：天后宫 -->
+<div class="log" id="log4">模型4加载中...</div>
+<div class="viewer" id="viewer4"></div>
 
 <script type="importmap">
 {
@@ -56,11 +67,10 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 const bgColor = 0xd5d5d5;
 const sensitivity = 0.003;
 
-// 全局共用 Draco 解码器（加载提速关键）
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
-function createViewer(containerId, logId, modelUrl, cameraPos) {
+function createViewer(containerId, logId, modelUrl, cameraPos, initAzimuth = 0) {
   const container = document.getElementById(containerId);
   const log = document.getElementById(logId);
 
@@ -74,10 +84,10 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
   renderer.setSize(1200, 700);
   container.appendChild(renderer.domElement);
 
-  let azimuth = -Math.PI/2;
+  // 初始视角：支持逆时针90度
+  let azimuth = -Math.PI/2 + initAzimuth;
   let polar = Math.PI/2 - 0.35;
 
-  // 电脑控制
   renderer.domElement.addEventListener('mousemove', (e) => {
     if (!e.buttons) return;
     azimuth -= e.movementX * sensitivity;
@@ -85,7 +95,6 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
     polar = Math.max(Math.PI / 6, Math.min(Math.PI * 5 / 6, polar));
   });
 
-  // 手机触摸控制
   let lastX = 0, lastY = 0;
   renderer.domElement.addEventListener('touchstart', (e) => {
     if (e.touches.length === 1) {
@@ -97,23 +106,21 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
     if (e.touches.length === 1) {
       e.preventDefault();
       let dx = e.touches[0].clientX - lastX;
+      lastX = e.touches[0].clientX;
       let dy = e.touches[0].clientY - lastY;
+      lastY = e.touches[0].clientY;
       azimuth -= dx * sensitivity;
       polar -= dy * sensitivity;
       polar = Math.max(Math.PI / 6, Math.min(Math.PI * 5 / 6, polar));
-      lastX = e.touches[0].clientX;
-      lastY = e.touches[0].clientY;
     }
   });
 
-  // 灯光
   const ambient = new THREE.AmbientLight(0xffffff, 1.5);
   scene.add(ambient);
   const direct = new THREE.DirectionalLight(0xffffff, 1);
   direct.position.set(5, 10, 5);
   scene.add(direct);
 
-  // 模型加载（共用解码器）
   const loader = new GLTFLoader();
   loader.setDRACOLoader(dracoLoader);
 
@@ -121,7 +128,7 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
     modelUrl,
     (gltf) => {
       scene.add(gltf.scene);
-      log.textContent = "✅ 第一人称：按住鼠标拖动转头";
+      log.textContent = "✅ 按住鼠标拖动查看";
       log.style.color = "green";
     },
     undefined,
@@ -149,9 +156,18 @@ function createViewer(containerId, logId, modelUrl, cameraPos) {
   animate();
 }
 
-// 模型文件名 & 相机位置（和你现在的设置完全一致）
-createViewer('viewer1', 'log1', './qingjinsi_f1.glb', new THREE.Vector3(3, 2, 4));
-createViewer('viewer2', 'log2', './tianhougong_f1.glb', new THREE.Vector3(30, 3, 0));
+// ====================== 你的模型配置 ======================
+// 1 朝东楼
+createViewer('viewer1', 'log1', './chaodonglou_f5.glb', new THREE.Vector3(3, 2, 4));
+
+// 2 坑墙楼
+createViewer('viewer2', 'log2', './kenqianglou_f5.glb', new THREE.Vector3(30, 3, 0));
+
+// 3 清净寺 ← 你要求：逆时针转90度
+createViewer('viewer3', 'log3', './qingjinsi_f1.glb', new THREE.Vector3(3, 2, 4), -Math.PI/2);
+
+// 4 天后宫 ← 你要求：视角不变
+createViewer('viewer4', 'log4', './tianhougong_f1.glb', new THREE.Vector3(25, 3, -1));
 
 </script>
 </body>
