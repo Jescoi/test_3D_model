@@ -13,7 +13,7 @@
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#f6f0e1;display:flex;flex-direction:column;align-items:center;padding:30px 0;gap:30px}
   .log{font-size:18px;color:#8a5a32}
-  .viewer{width:1200px;height:700px;border:2px solid #ccc;border-radius:8px;background:#fff}
+  .viewer{width:1200px;height:700px;border:2px solid #ccc;border-radius:8px;background:#fff;touch-action:none;}
 </style>
 </head>
 <body>
@@ -24,7 +24,6 @@
 <div class="log" id="log4">加载中...</div><div class="viewer" id="viewer4"></div>
 <div class="log" id="log5">加载中...</div><div class="viewer" id="viewer5"></div>
 
-<!-- 换回 GitHub Pages 不跨域的 unpkg 地址 -->
 <script type="importmap">
 {
   "imports": {
@@ -39,10 +38,8 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 
-// 禁用 Three.js 缓存，每次都读最新文件
 THREE.Cache.enabled = false
 
-// 换回 Google 的 DRACO 解码器，GitHub Pages 不跨域
 const draco = new DRACOLoader()
 draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/')
 
@@ -66,19 +63,38 @@ async function createViewer(containerId, logId, url, cam, az=0, pitch=0.35){
 
   let azimuth = -Math.PI/2 + az
   let polar = Math.PI/2 - pitch
+  const sensitivity = 0.003
 
+  // 电脑鼠标
   renderer.domElement.addEventListener('mousemove', e=>{
-    if(!e.buttons)return
-    azimuth -= e.movementX*0.003
-    polar -= e.movementY*0.003
-    polar=Math.max(Math.PI/6,Math.min(Math.PI*5/6,polar))
+    if(!e.buttons) return
+    azimuth -= e.movementX * sensitivity
+    polar -= e.movementY * sensitivity
+    polar = Math.max(Math.PI/6, Math.min(Math.PI*5/6, polar))
+  })
+
+  // 手机触屏 完整修复
+  let touchX = 0, touchY = 0
+  renderer.domElement.addEventListener('touchstart', e => {
+    touchX = e.touches[0].clientX
+    touchY = e.touches[0].clientY
+  })
+  renderer.domElement.addEventListener('touchmove', e => {
+    e.preventDefault()
+    const dx = e.touches[0].clientX - touchX
+    const dy = e.touches[0].clientY - touchY
+    touchX = e.touches[0].clientX
+    touchY = e.touches[0].clientY
+
+    azimuth -= dx * sensitivity
+    polar -= dy * sensitivity
+    polar = Math.max(Math.PI/6, Math.min(Math.PI*5/6, polar))
   })
 
   const light = new THREE.AmbientLight(0xffffff,2)
   scene.add(light)
 
   await new Promise(resolve=>{
-    // 加时间戳，强制浏览器不缓存模型文件
     loader.load(url + '?t='+Date.now(),gltf=>{
       scene.add(gltf.scene)
       log.textContent='✅ 就绪'
@@ -104,7 +120,6 @@ async function createViewer(containerId, logId, url, cam, az=0, pitch=0.35){
   ani()
 }
 
-// 串行加载，避免并发请求被限制
 (async function(){
   await createViewer('viewer1','log1','./chaodonglou_f5.glb',new THREE.Vector3(3,2,4),0,0.17)
   await createViewer('viewer2','log2','./kenqianglou_f5.glb',new THREE.Vector3(30,3,0))
